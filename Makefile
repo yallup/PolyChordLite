@@ -70,6 +70,8 @@ examples: $(EXAMPLES)
 $(EXAMPLES): % : $(BIN_DIR)/%
 $(PROGRAMS): % : $(BIN_DIR)/%
 
+
+programs: $(PROGRAMS) 
 # PolyChord
 # ---------
 # static library

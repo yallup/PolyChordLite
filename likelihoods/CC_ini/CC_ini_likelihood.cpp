@@ -42,21 +42,99 @@
 // If you would like to adjust the signature of this call, then you should adjust it there,
 // as well as in likelihoods/my_cpp_likelihood.hpp
 // 
+double potential(double field) 
+{
+    double musq = -4.0;
+    double lambda = 1.0;
+
+    // double V = lambda * pow(field * field - 1, 2) + 0.5 * musq * field * field;
+    double V = lambda * field * field * field * field  + 0.5 * musq * field * field;
+
+
+    return V;
+}
+
+
+double laplacian(double* theta, int n, int i, int j, int k, int l) {
+    double kinetic = 0.0;
+
+    int idx = i * n * n * n + j * n * n + k * n + l;
+
+    int idx_i_up = ((i+1) % n) * n * n * n + j * n * n + k * n + l;
+    int idx_i_down = ((i-1 + n) % n) * n * n * n + j * n * n + k * n + l;
+    int idx_j_up = i * n * n * n + ((j+1) % n) * n * n + k * n + l;
+    int idx_j_down = i * n * n * n + ((j-1 + n) % n) * n * n + k * n + l;
+    int idx_k_up = i * n * n * n + j * n * n + ((k+1) % n) * n + l;
+    int idx_k_down = i * n * n * n + j * n * n + ((k-1 + n) % n) * n + l;
+    int idx_l_up = i * n * n * n + j * n * n + k * n + ((l+1) % n);
+    int idx_l_down = i * n * n * n + j * n * n + k * n + ((l-1 + n) % n);
+
+    kinetic += 8 * theta[idx] * theta[idx];
+    kinetic -= theta[idx] * theta[idx_i_up];
+    kinetic -= theta[idx] * theta[idx_i_down];
+    kinetic -= theta[idx] * theta[idx_j_up];
+    kinetic -= theta[idx] * theta[idx_j_down];
+    kinetic -= theta[idx] * theta[idx_k_up];
+    kinetic -= theta[idx] * theta[idx_k_down];
+    kinetic -= theta[idx] * theta[idx_l_up];
+    kinetic -= theta[idx] * theta[idx_l_down];
+
+    return kinetic;
+}
+
+
+double magnetisation(double* theta, int n) 
+{
+    double mag = 0.0;
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            mag += theta[i * n + j];
+        }
+    }
+
+    return mag / (n*n);
+}
+
+
 double loglikelihood (double theta[], int nDims, double phi[], int nDerived)
 {
-    double mu = 5e-1;
-    double sigma = 1e-1;
-    double logL= -std::log(std::atan(1)*8*sigma*sigma)*nDims/2.;
+    // assume n x n = nDims grid for now.
+    double fieldAction = 0.0;
 
-    double rad2 = 0.;
-    for (int i=0;i<nDims;i++)
-        rad2 += (theta[i]-mu)*(theta[i]-mu);
+    double kappa = 1.0;
+    // int n = sqrt(nDims);
+    int n = std::round(std::pow(nDims, 0.25));
 
-    phi[0] = std::sqrt(rad2);
-    logL -= rad2/(2.*sigma*sigma);
-    
-    return logL;
+    // kinetic term
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            for (int k = 0; k < n; k++) {
+                for (int l =0; l < n; l++) {
+                    fieldAction += kappa * laplacian(theta, n, i, j, k, l);
+                }
+            }            
+        }
+    }
 
+    // potential term
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            for (int k = 0; k < n; k++) {
+                for (int l = 0; l < n; l++) {
+                    fieldAction += potential(theta[i * n * n * n + j * n * n + k * n + l]);
+                }
+            }
+        }
+    }
+
+    //lagrangian becomes to T + V after wick rotation
+
+    //lambda=inf gives V(|1|)=0 else inf, so only phi=|1| has non infinite action (non-zero prob)
+    //therefore we recover ising model with kappa = 1/T 
+
+    phi[0] = magnetisation(theta, n);
+
+    return -fieldAction;
 }
 
 // Prior function
