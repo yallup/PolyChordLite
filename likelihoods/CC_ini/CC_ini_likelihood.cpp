@@ -44,11 +44,11 @@
 // 
 double potential(double field) 
 {
-    double musq = -4.0;
-    double lambda = 1.0;
-
-    // double V = lambda * pow(field * field - 1, 2) + 0.5 * musq * field * field;
-    double V = lambda * field * field * field * field  + 0.5 * musq * field * field;
+    // double musq = -4.0;
+    // double lambda = 1.0;
+    double lambda = 1.5;
+    double V = lambda * pow(field * field - 1, 2) +  field * field;
+    // double V = lambda * field * field * field * field  + 0.5 * musq * field * field;
 
 
     return V;
@@ -69,7 +69,7 @@ double laplacian(double* theta, int n, int i, int j, int k, int l) {
     int idx_l_up = i * n * n * n + j * n * n + k * n + ((l+1) % n);
     int idx_l_down = i * n * n * n + j * n * n + k * n + ((l-1 + n) % n);
 
-    kinetic += 8 * theta[idx] * theta[idx];
+    // kinetic += 8 * theta[idx] * theta[idx];
     kinetic -= theta[idx] * theta[idx_i_up];
     kinetic -= theta[idx] * theta[idx_i_down];
     kinetic -= theta[idx] * theta[idx_j_up];
@@ -101,7 +101,7 @@ double loglikelihood (double theta[], int nDims, double phi[], int nDerived)
     // assume n x n = nDims grid for now.
     double fieldAction = 0.0;
 
-    double kappa = 1.0;
+    double kappa = 2.0;
     // int n = sqrt(nDims);
     int n = std::round(std::pow(nDims, 0.25));
 
