@@ -1,5 +1,7 @@
 # include "CC_ini_likelihood.hpp"
 # include <cmath>
+# include <iostream>
+# include <cstdlib>
 
 // This module is where your likelihood code should be placed.
 //
@@ -13,6 +15,8 @@
 //
 //
 //============================================================
+double lambda = 1.5;
+double kappa = 2.0;
 
 
 
@@ -44,13 +48,7 @@
 // 
 double potential(double field) 
 {
-    // double musq = -4.0;
-    // double lambda = 1.0;
-    double lambda = 1.5;
     double V = lambda * pow(field * field - 1, 2) +  field * field;
-    // double V = lambda * field * field * field * field  + 0.5 * musq * field * field;
-
-
     return V;
 }
 
@@ -101,7 +99,6 @@ double loglikelihood (double theta[], int nDims, double phi[], int nDerived)
     // assume n x n = nDims grid for now.
     double fieldAction = 0.0;
 
-    double kappa = 2.0;
     // int n = sqrt(nDims);
     int n = std::round(std::pow(nDims, 0.25));
 
@@ -221,4 +218,9 @@ void setup_loglikelihood()
     //
     //
     //============================================================
+    // read lambda and kappa from environment variables
+    lambda = std::stod(std::getenv("LAMBDA"));
+    kappa = std::stod(std::getenv("KAPPA"));
+    std::cout << "lambda = " << lambda << std::endl;
+    std::cout << "kappa = " << kappa << std::endl;
 }
