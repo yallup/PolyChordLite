@@ -53,29 +53,22 @@ double potential(double field)
 }
 
 
-double laplacian(double* theta, int n, int i, int j, int k, int l) {
+double laplacian(double* theta, int n, int i, int j) {
     double kinetic = 0.0;
 
-    int idx = i * n * n * n + j * n * n + k * n + l;
+    int idx = i * n + j;
 
-    int idx_i_up = ((i+1) % n) * n * n * n + j * n * n + k * n + l;
-    int idx_i_down = ((i-1 + n) % n) * n * n * n + j * n * n + k * n + l;
-    int idx_j_up = i * n * n * n + ((j+1) % n) * n * n + k * n + l;
-    int idx_j_down = i * n * n * n + ((j-1 + n) % n) * n * n + k * n + l;
-    int idx_k_up = i * n * n * n + j * n * n + ((k+1) % n) * n + l;
-    int idx_k_down = i * n * n * n + j * n * n + ((k-1 + n) % n) * n + l;
-    int idx_l_up = i * n * n * n + j * n * n + k * n + ((l+1) % n);
-    int idx_l_down = i * n * n * n + j * n * n + k * n + ((l-1 + n) % n);
+    int idx_left = j + 1 == n   ? i * n         : i * n + (j+1);
+    int idx_right = j - 1 < 0   ? i * n + (n-1) : i * n + (j-1);
+    int idx_up = i - 1 < 0      ? (n-1) * n + j : (i-1) * n + j;
+    int idx_down = i + 1 == n   ? j             : (i+1) * n + j; // with torus b.c.
+    
 
-    // kinetic += 8 * theta[idx] * theta[idx];
-    kinetic -= theta[idx] * theta[idx_i_up];
-    kinetic -= theta[idx] * theta[idx_i_down];
-    kinetic -= theta[idx] * theta[idx_j_up];
-    kinetic -= theta[idx] * theta[idx_j_down];
-    kinetic -= theta[idx] * theta[idx_k_up];
-    kinetic -= theta[idx] * theta[idx_k_down];
-    kinetic -= theta[idx] * theta[idx_l_up];
-    kinetic -= theta[idx] * theta[idx_l_down];
+    kinetic += 2 * pow(theta[idx], 2);
+    kinetic -= theta[idx] * theta[idx_left];
+    kinetic -= theta[idx] * theta[idx_right];
+    kinetic -= theta[idx] * theta[idx_up];
+    kinetic -= theta[idx] * theta[idx_down];
 
     return kinetic;
 }
@@ -99,28 +92,19 @@ double loglikelihood (double theta[], int nDims, double phi[], int nDerived)
     // assume n x n = nDims grid for now.
     double fieldAction = 0.0;
 
-    // int n = sqrt(nDims);
-    int n = std::round(std::pow(nDims, 0.25));
+    int n = sqrt(nDims);
 
     // kinetic term
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            for (int k = 0; k < n; k++) {
-                for (int l =0; l < n; l++) {
-                    fieldAction += kappa * laplacian(theta, n, i, j, k, l);
-                }
-            }            
+            fieldAction += kappa * laplacian(theta, n, i, j);
         }
     }
 
-    // potential term
+    // potential termz
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            for (int k = 0; k < n; k++) {
-                for (int l = 0; l < n; l++) {
-                    fieldAction += potential(theta[i * n * n * n + j * n * n + k * n + l]);
-                }
-            }
+            fieldAction += potential(theta[i * n + j]);
         }
     }
 
